@@ -46,8 +46,6 @@ Depth::Depth(const XnChar* strName) :
   m_lastFPS(30)
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
-
-
 }
 Depth::~Depth()
 {
@@ -116,8 +114,7 @@ XnStatus Depth::Init()
 
 XnBool Depth::IsCapabilitySupported( const XnChar* strCapabilityName )
 {
-  // we only support the mirror capability
-  return (strcmp(strCapabilityName, XN_CAPABILITY_MIRROR) == 0);
+  return FALSE;
 }
 
 XnStatus Depth::StartGenerating()
