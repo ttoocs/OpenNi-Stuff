@@ -42,9 +42,12 @@ Depth::Depth(const XnChar* strName) :
 	m_bMirror(FALSE)
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
-  openni::OpenNI::initialize();
-}
+ 
+  auto r = openni::OpenNI::initialize();
+  if (r !=  openni::STATUS_OK)
+    std::cout << "FAILED: " << openni::OpenNI::getExtendedError() << std::endl;
 
+}
 Depth::~Depth()
 {
   openni::OpenNI::shutdown();
@@ -54,8 +57,6 @@ Depth::~Depth()
 XnStatus Depth::Init()
 {
 	m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
-
-  
 
 	if (m_pDepthMap == NULL)
 	{
@@ -78,8 +79,6 @@ XnStatus Depth::StartGenerating()
 	m_bGenerating = TRUE;
 
   std::cout << "Depth generating started with filename: " << m_strName << std::endl;
-
-
 	// start scheduler thread
 	nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
 	if (nRetVal != XN_STATUS_OK)
@@ -87,7 +86,6 @@ XnStatus Depth::StartGenerating()
 		m_bGenerating = FALSE;
 		return (nRetVal);
 	}
-
 	m_generatingEvent.Raise();
 
 	return (XN_STATUS_OK);
@@ -103,7 +101,7 @@ void Depth::StopGenerating()
 	m_bGenerating = FALSE;
 
 	// wait for thread to exit
-	xnOSWaitForThreadExit(m_hScheduler, 100);
+  xnOSWaitForThreadExit(m_hScheduler, 100);
 
 	m_generatingEvent.Raise();
 }
@@ -137,7 +135,7 @@ XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 
 XnStatus Depth::UpdateData()
 {
-  /*
+  
 	XnDepthPixel* pPixel = m_pDepthMap;
 
 	// change our internal data, so that pixels go from frameID incrementally in both axes.
@@ -175,7 +173,7 @@ XnStatus Depth::UpdateData()
 	m_bDataAvailable = FALSE;
 	
 	return (XN_STATUS_OK);
-  */
+  
 }
 
 
