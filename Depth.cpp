@@ -25,7 +25,6 @@
 
 #include "Depth.h"
 
-#include <OpenNI.h>
 
 #define SUPPORTED_X_RES 400
 #define SUPPORTED_Y_RES 300
@@ -43,9 +42,6 @@ Depth::Depth(const XnChar* strName) :
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
  
-  auto r = openni::OpenNI::initialize();
-  if (r !=  openni::STATUS_OK)
-    std::cout << "FAILED: " << openni::OpenNI::getExtendedError() << std::endl;
 
 }
 Depth::~Depth()
@@ -56,6 +52,45 @@ Depth::~Depth()
 
 XnStatus Depth::Init()
 {
+  std::cout << "OpenNI2 Depth: Init filename: " << m_strName << std::endl;
+  
+
+  openni::Status r;
+
+  r = openni::OpenNI::initialize();
+  if (r !=  openni::STATUS_OK){
+      std::cout << "OpenNi2 init failed: " << openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = mydevice.open(m_strName);
+  if (r != openni::STATUS_OK){
+    if(openni::OpenNI::getExtendedError() != ""){
+      std::cout << "OpenNi2 open failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    }else
+      std::cout << "OpenNi2 open failed, for an unknown reason. (maybe a empty file?)" << std::endl;
+  //  throw ffs; //Good for debugging this.
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = mydevice.getPlaybackControl()->setSpeed(-1);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 set playback failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = mydepthStream.create(mydevice, openni::SENSOR_DEPTH);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 create stream failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = mydepthStream.start();
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 start stream  failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
 	m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
 
 	if (m_pDepthMap == NULL)
@@ -78,7 +113,8 @@ XnStatus Depth::StartGenerating()
 	
 	m_bGenerating = TRUE;
 
-  std::cout << "Depth generating started with filename: " << m_strName << std::endl;
+
+  /* Origonal code
 	// start scheduler thread
 	nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
 	if (nRetVal != XN_STATUS_OK)
@@ -87,7 +123,7 @@ XnStatus Depth::StartGenerating()
 		return (nRetVal);
 	}
 	m_generatingEvent.Raise();
-
+// */
 	return (XN_STATUS_OK);
 }
 
@@ -100,9 +136,11 @@ void Depth::StopGenerating()
 {
 	m_bGenerating = FALSE;
 
+  /* Origonal code
 	// wait for thread to exit
   xnOSWaitForThreadExit(m_hScheduler, 100);
 
+//  */
 	m_generatingEvent.Raise();
 }
 
