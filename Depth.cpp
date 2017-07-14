@@ -53,7 +53,6 @@ Depth::~Depth()
 XnStatus Depth::Init()
 {
   std::cout << "OpenNI2 Depth: Init filename: " << m_strName << std::endl;
-  
 
   openni::Status r;
 
@@ -75,7 +74,14 @@ XnStatus Depth::Init()
 
   r = mydevice.getPlaybackControl()->setSpeed(-1);
   if (r != openni::STATUS_OK){
-    std::cout << "OpenNi2 set playback failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    std::cout << "OpenNi2 set playback speed failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = mydevice.getPlaybackControl()->setRepeatEnabled(TRUE);
+//  r = mydevice.getPlaybackControl()->setRepeatEnabled(FALSE);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 set playback repeat failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
@@ -112,7 +118,6 @@ XnStatus Depth::StartGenerating()
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	m_bGenerating = TRUE;
-
 
 //  /* Origonal code
 	// start scheduler thread
@@ -174,7 +179,30 @@ XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 XnStatus Depth::UpdateData()
 {
 
-//  /* Origonal Code  
+
+// /*  
+
+  openni::VideoFrameRef depthFrame;
+  mydepthStream.readFrame(&depthFrame);
+//  std::cout << mydepthStream.getVideoMode().getPixelFormat() << std::endl;
+//	PIXEL_FORMAT_DEPTH_1_MM = 100,  ***********
+//	PIXEL_FORMAT_DEPTH_100_UM = 101,
+//	PIXEL_FORMAT_SHIFT_9_2 = 102,
+//  PIXEL_FORMAT_SHIFT_9_3 = 103,
+  
+ // XnDepthPixel* pPixel = m_pDepthMap;
+ // pPixel = (XnDepthPixel *) depthFrame.getData(); 
+  //Note: From XnTypes.h in openni1 and OpenNI.h in openni2, these are both uint16_t.
+  
+  m_pDepthMap = (XnDepthPixel *) depthFrame.getData();
+  
+  m_nFrameID++;
+  m_nTimestamp += 1000000 / SUPPORTED_FPS;  
+  // mark that data is old
+  m_bDataAvailable = FALSE;
+
+// */
+  /* Origonal Code  
 	XnDepthPixel* pPixel = m_pDepthMap;
 
 	// change our internal data, so that pixels go from frameID incrementally in both axes.

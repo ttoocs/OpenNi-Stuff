@@ -21,6 +21,8 @@
 #include <XnModuleCppInterface.h>
 #include <XnEventT.h>
 
+#include <OpenNI.h>
+
 class Depth : 
 	public virtual xn::ModuleDepthGenerator,
 	public virtual xn::ModuleMirrorInterface
@@ -74,6 +76,9 @@ public:
 private:
 	static XN_THREAD_PROC SchedulerThread(void* pCookie);
 	void OnNewFrame();
+  
+  openni::Device mydevice;
+  openni::VideoStream mydepthStream;
 
 	XnBool m_bGenerating;
 	XnBool m_bDataAvailable;
