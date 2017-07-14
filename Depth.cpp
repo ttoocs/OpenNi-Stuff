@@ -28,31 +28,31 @@
 //#define SUPPORTED_X_RES 400
 //#define SUPPORTED_Y_RES 300
 //#define SUPPORTED_FPS 30
-#define MAX_DEPTH_VALUE	15000
+#define MAX_DEPTH_VALUE 15000
 
 #define SUPPORTED_X_RES mydepthStream.getVideoMode().getResolutionX()
 #define SUPPORTED_Y_RES mydepthStream.getVideoMode().getResolutionY()
 //#define SUPPORTED_FPS mydepthStream.getVideoMode().getFps()
 #define SUPPORTED_FPS m_lastFPS
 
-Depth::Depth(const XnChar* strName) : 
-	m_bGenerating(FALSE),
-	m_bDataAvailable(FALSE),
-	m_pDepthMap(NULL),
-	m_nFrameID(0),
-	m_nTimestamp(0),
-	m_hScheduler(NULL),
-	m_bMirror(FALSE),
+Depth::Depth(const XnChar* strName) :
+  m_bGenerating(FALSE),
+  m_bDataAvailable(FALSE),
+  m_pDepthMap(NULL),
+  m_nFrameID(0),
+  m_nTimestamp(0),
+  m_hScheduler(NULL),
+  m_bMirror(FALSE),
   m_lastFPS(30)
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
- 
+
 
 }
 Depth::~Depth()
 {
   openni::OpenNI::shutdown();
-	delete[] m_pDepthMap;
+  delete[] m_pDepthMap;
 }
 
 XnStatus Depth::Init()
@@ -104,308 +104,308 @@ XnStatus Depth::Init()
 
   m_lastFrame = mydevice.getPlaybackControl()->getNumberOfFrames(mydepthStream);
 
-	m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
+  m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
 
-	if (m_pDepthMap == NULL)
-	{
-		return XN_STATUS_ALLOC_FAILED;
-	}
+  if (m_pDepthMap == NULL)
+  {
+    return XN_STATUS_ALLOC_FAILED;
+  }
 
-	return (XN_STATUS_OK);
+  return (XN_STATUS_OK);
 }
 
 XnBool Depth::IsCapabilitySupported( const XnChar* strCapabilityName )
 {
-	// we only support the mirror capability
-	return (strcmp(strCapabilityName, XN_CAPABILITY_MIRROR) == 0);
+  // we only support the mirror capability
+  return (strcmp(strCapabilityName, XN_CAPABILITY_MIRROR) == 0);
 }
 
 XnStatus Depth::StartGenerating()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
-	m_bGenerating = TRUE;
+  XnStatus nRetVal = XN_STATUS_OK;
+
+  m_bGenerating = TRUE;
 
 //  /* Origonal code
-	// start scheduler thread
-	nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
-	if (nRetVal != XN_STATUS_OK)
-	{
-		m_bGenerating = FALSE;
-		return (nRetVal);
-	}
-	m_generatingEvent.Raise();
+  // start scheduler thread
+  nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
+  if (nRetVal != XN_STATUS_OK)
+  {
+    m_bGenerating = FALSE;
+    return (nRetVal);
+  }
+  m_generatingEvent.Raise();
 // */
-	return (XN_STATUS_OK);
+  return (XN_STATUS_OK);
 }
 
 XnBool Depth::IsGenerating()
 {
-	return m_bGenerating;
+  return m_bGenerating;
 }
 
 void Depth::StopGenerating()
 {
-	m_bGenerating = FALSE;
+  m_bGenerating = FALSE;
 
 //  /* Origonal code
-	// wait for thread to exit
+  // wait for thread to exit
   xnOSWaitForThreadExit(m_hScheduler, 100);
 
 //  */
-	m_generatingEvent.Raise();
+  m_generatingEvent.Raise();
 }
 
 XnStatus Depth::RegisterToGenerationRunningChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
 {
-	return m_generatingEvent.Register(handler, pCookie, hCallback);
+  return m_generatingEvent.Register(handler, pCookie, hCallback);
 }
 
 void Depth::UnregisterFromGenerationRunningChange( XnCallbackHandle hCallback )
 {
-	m_generatingEvent.Unregister(hCallback);
+  m_generatingEvent.Unregister(hCallback);
 }
 
 XnStatus Depth::RegisterToNewDataAvailable( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
 {
-	return m_dataAvailableEvent.Register(handler, pCookie, hCallback);
+  return m_dataAvailableEvent.Register(handler, pCookie, hCallback);
 }
 
 void Depth::UnregisterFromNewDataAvailable( XnCallbackHandle hCallback )
 {
-	m_dataAvailableEvent.Unregister(hCallback);
+  m_dataAvailableEvent.Unregister(hCallback);
 }
 
 XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 {
-	// return next timestamp
-	nTimestamp = 1000000 / SUPPORTED_FPS;
-	return m_bDataAvailable;
+  // return next timestamp
+  nTimestamp = 1000000 / SUPPORTED_FPS;
+  return m_bDataAvailable;
 }
 
 XnStatus Depth::UpdateData()
 {
 
-// /*  
+// /*
   if(m_nFrameID >=  m_lastFrame -1 ){
     std::cout << "Reached end of recording! FrameID: " << m_nFrameID << " numFrames: " << m_lastFrame  << std::endl;
     std::cout << "TODO: Handle this properly." << std::endl;
     m_bDataAvailable = FALSE;
     m_bGenerating = FALSE;
-	  return (XN_STATUS_OK);
+    return (XN_STATUS_OK);
   }
   openni::VideoFrameRef depthFrame;
   mydepthStream.readFrame(&depthFrame);
 //  std::cout << mydepthStream.getVideoMode().getPixelFormat() << std::endl;
-//	PIXEL_FORMAT_DEPTH_1_MM = 100,  ***********
-//	PIXEL_FORMAT_DEPTH_100_UM = 101,
-//	PIXEL_FORMAT_SHIFT_9_2 = 102,
+//  PIXEL_FORMAT_DEPTH_1_MM = 100,  ***********
+//  PIXEL_FORMAT_DEPTH_100_UM = 101,
+//  PIXEL_FORMAT_SHIFT_9_2 = 102,
 //  PIXEL_FORMAT_SHIFT_9_3 = 103,
-  
+
  // XnDepthPixel* pPixel = m_pDepthMap;
- // pPixel = (XnDepthPixel *) depthFrame.getData(); 
+ // pPixel = (XnDepthPixel *) depthFrame.getData();
   //Note: From XnTypes.h in openni1 and OpenNI.h in openni2, these are both uint16_t.
-  
+
   m_pDepthMap = (XnDepthPixel *) depthFrame.getData();
-  
+
   m_nFrameID = depthFrame.getFrameIndex();
-  m_nTimestamp = depthFrame.getTimestamp();  
+  m_nTimestamp = depthFrame.getTimestamp();
   // mark that data is old
   m_bDataAvailable = FALSE;
 
 // */
-  /* Origonal Code  
-	XnDepthPixel* pPixel = m_pDepthMap;
+  /* Origonal Code
+  XnDepthPixel* pPixel = m_pDepthMap;
 
-	// change our internal data, so that pixels go from frameID incrementally in both axes.
-	for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
-	{
-		for (XnUInt x = 0; x < SUPPORTED_X_RES; ++x, ++pPixel)
-		{
-			*pPixel = (m_nFrameID + x + y) % MAX_DEPTH_VALUE;
-		}
-	}
+  // change our internal data, so that pixels go from frameID incrementally in both axes.
+  for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
+  {
+    for (XnUInt x = 0; x < SUPPORTED_X_RES; ++x, ++pPixel)
+    {
+      *pPixel = (m_nFrameID + x + y) % MAX_DEPTH_VALUE;
+    }
+  }
 
-	// if needed, mirror the map
-	if (m_bMirror)
-	{
-		XnDepthPixel temp;
+  // if needed, mirror the map
+  if (m_bMirror)
+  {
+    XnDepthPixel temp;
 
-		for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
-		{
-			XnDepthPixel* pUp = &m_pDepthMap[y * SUPPORTED_X_RES];
-			XnDepthPixel* pDown = &m_pDepthMap[(y+1) * SUPPORTED_X_RES - 1];
+    for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
+    {
+      XnDepthPixel* pUp = &m_pDepthMap[y * SUPPORTED_X_RES];
+      XnDepthPixel* pDown = &m_pDepthMap[(y+1) * SUPPORTED_X_RES - 1];
 
-			for (XnUInt x = 0; x < SUPPORTED_X_RES/2; ++x, ++pUp, --pDown)
-			{
-				temp = *pUp;
-				*pUp = *pDown;
-				*pDown = temp;
-			}
-		}
-	}
+      for (XnUInt x = 0; x < SUPPORTED_X_RES/2; ++x, ++pUp, --pDown)
+      {
+        temp = *pUp;
+        *pUp = *pDown;
+        *pDown = temp;
+      }
+    }
+  }
 
-	m_nFrameID++;
-	m_nTimestamp += 1000000 / SUPPORTED_FPS;
+  m_nFrameID++;
+  m_nTimestamp += 1000000 / SUPPORTED_FPS;
 
-	// mark that data is old
-	m_bDataAvailable = FALSE;
-	
+  // mark that data is old
+  m_bDataAvailable = FALSE;
+
 // */
-	return (XN_STATUS_OK);
-  
+  return (XN_STATUS_OK);
+
 }
 
 
 const void* Depth::GetData()
 {
-	return m_pDepthMap;
+  return m_pDepthMap;
 }
 
 XnUInt32 Depth::GetDataSize()
-{  
-	return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnDepthPixel));
+{
+  return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnDepthPixel));
 }
 
 XnUInt64 Depth::GetTimestamp()
 {
-	return m_nTimestamp;
+  return m_nTimestamp;
 }
 
 XnUInt32 Depth::GetFrameID()
 {
-	return m_nFrameID;
+  return m_nFrameID;
 }
 
 xn::ModuleMirrorInterface* Depth::GetMirrorInterface()
 {
-	return this;
+  return this;
 }
 
 XnStatus Depth::SetMirror( XnBool bMirror )
 {
-	m_bMirror = bMirror;
-	m_mirrorEvent.Raise();
-	return (XN_STATUS_OK);
+  m_bMirror = bMirror;
+  m_mirrorEvent.Raise();
+  return (XN_STATUS_OK);
 }
 
 XnBool Depth::IsMirrored()
 {
-	return m_bMirror;
+  return m_bMirror;
 }
 
 XnStatus Depth::RegisterToMirrorChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
 {
-	return m_mirrorEvent.Register(handler, pCookie, hCallback);
+  return m_mirrorEvent.Register(handler, pCookie, hCallback);
 }
 
 void Depth::UnregisterFromMirrorChange( XnCallbackHandle hCallback )
 {
-	m_mirrorEvent.Unregister(hCallback);
+  m_mirrorEvent.Unregister(hCallback);
 }
 
 XnUInt32 Depth::GetSupportedMapOutputModesCount()
 {
-	// we only support a single mode
-	return 1;
+  // we only support a single mode
+  return 1;
 }
 
 XnStatus Depth::GetSupportedMapOutputModes( XnMapOutputMode aModes[], XnUInt32& nCount )
 {
-	if (nCount < 1)
-	{
-		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
-	}
+  if (nCount < 1)
+  {
+    return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
+  }
 
-	aModes[0].nXRes = SUPPORTED_X_RES;
-	aModes[0].nYRes = SUPPORTED_Y_RES;
-	aModes[0].nFPS = SUPPORTED_FPS;
+  aModes[0].nXRes = SUPPORTED_X_RES;
+  aModes[0].nYRes = SUPPORTED_Y_RES;
+  aModes[0].nFPS = SUPPORTED_FPS;
 
-	return (XN_STATUS_OK);
+  return (XN_STATUS_OK);
 }
 
 XnStatus Depth::SetMapOutputMode( const XnMapOutputMode& Mode )
 {
-	// make sure this is our supported mode
-	if (Mode.nXRes != SUPPORTED_X_RES ||
-		Mode.nYRes != SUPPORTED_Y_RES ||
-		Mode.nFPS != SUPPORTED_FPS)
-	{
-		return (XN_STATUS_BAD_PARAM);
-	}
+  // make sure this is our supported mode
+  if (Mode.nXRes != SUPPORTED_X_RES ||
+    Mode.nYRes != SUPPORTED_Y_RES ||
+    Mode.nFPS != SUPPORTED_FPS)
+  {
+    return (XN_STATUS_BAD_PARAM);
+  }
 
-	return (XN_STATUS_OK);
+  return (XN_STATUS_OK);
 }
 
 XnStatus Depth::GetMapOutputMode( XnMapOutputMode& Mode )
 {
-	Mode.nXRes = SUPPORTED_X_RES;
-	Mode.nYRes = SUPPORTED_Y_RES;
-	Mode.nFPS = SUPPORTED_FPS;
+  Mode.nXRes = SUPPORTED_X_RES;
+  Mode.nYRes = SUPPORTED_Y_RES;
+  Mode.nFPS = SUPPORTED_FPS;
 
-	return (XN_STATUS_OK);
+  return (XN_STATUS_OK);
 }
 
 XnStatus Depth::RegisterToMapOutputModeChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
 {
-	// no need. we only allow one mode
-	hCallback = this;
-	return XN_STATUS_OK;
+  // no need. we only allow one mode
+  hCallback = this;
+  return XN_STATUS_OK;
 }
 
 void Depth::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 {
-	// do nothing (we didn't really register)	
+  // do nothing (we didn't really register)
 }
 
 XnDepthPixel* Depth::GetDepthMap()
 {
-	return m_pDepthMap;
+  return m_pDepthMap;
 }
 
 XnDepthPixel Depth::GetDeviceMaxDepth()
 {
-	return MAX_DEPTH_VALUE;
+  return MAX_DEPTH_VALUE;
 }
 
 void Depth::GetFieldOfView( XnFieldOfView& FOV )
 {
-	// some numbers
-	FOV.fHFOV = 1.35;
-	FOV.fVFOV = 1.35;
+  // some numbers
+  FOV.fHFOV = 1.35;
+  FOV.fVFOV = 1.35;
 }
 
 XnStatus Depth::RegisterToFieldOfViewChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
 {
-	// no need. it never changes
-	hCallback = this;
-	return XN_STATUS_OK;
+  // no need. it never changes
+  hCallback = this;
+  return XN_STATUS_OK;
 }
 
 void Depth::UnregisterFromFieldOfViewChange( XnCallbackHandle /*hCallback*/ )
 {
-	// do nothing (we didn't really register)	
+  // do nothing (we didn't really register)
 }
 
 XN_THREAD_PROC Depth::SchedulerThread( void* pCookie )
 {
-	Depth* pThis = (Depth*)pCookie;
+  Depth* pThis = (Depth*)pCookie;
 
-	while (pThis->m_bGenerating)
-	{
-		// wait 33 ms (to produce 30 FPS)
-//		xnOSSleep(1000000/SUPPORTED_FPS/1000);
-		xnOSSleep(1000000/pThis->m_lastFPS/1000);
+  while (pThis->m_bGenerating)
+  {
+    // wait 33 ms (to produce 30 FPS)
+//    xnOSSleep(1000000/SUPPORTED_FPS/1000);
+    xnOSSleep(1000000/pThis->m_lastFPS/1000);
 
 
-		pThis->OnNewFrame();
-	}
+    pThis->OnNewFrame();
+  }
 
-	XN_THREAD_PROC_RETURN(0);
+  XN_THREAD_PROC_RETURN(0);
 }
 
 void Depth::OnNewFrame()
 {
-	m_bDataAvailable = TRUE;
-	m_dataAvailableEvent.Raise();
+  m_bDataAvailable = TRUE;
+  m_dataAvailableEvent.Raise();
 }
