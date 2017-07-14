@@ -26,10 +26,16 @@
 #include "Depth.h"
 
 
-#define SUPPORTED_X_RES 400
-#define SUPPORTED_Y_RES 300
+//#define SUPPORTED_X_RES 400
+//#define SUPPORTED_Y_RES 300
 #define SUPPORTED_FPS 30
 #define MAX_DEPTH_VALUE	15000
+
+
+#define SUPPORTED_X_RES mydepthStream.getVideoMode().getResolutionX()
+#define SUPPORTED_Y_RES mydepthStream.getVideoMode().getResolutionY()
+//#define SUPPORTED_FPS mydepthStream.getVideoMode().getFps()
+
 
 Depth::Depth(const XnChar* strName) : 
 	m_bGenerating(FALSE),
@@ -251,7 +257,7 @@ const void* Depth::GetData()
 }
 
 XnUInt32 Depth::GetDataSize()
-{
+{  
 	return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnDepthPixel));
 }
 
