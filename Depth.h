@@ -46,7 +46,6 @@ public:
   virtual void UnregisterFromNewDataAvailable(XnCallbackHandle hCallback);
   virtual XnBool IsNewDataAvailable(XnUInt64& nTimestamp);
   virtual XnStatus UpdateData();
-  virtual const void* GetData();
   virtual XnUInt32 GetDataSize();
   virtual XnUInt64 GetTimestamp();
   virtual XnUInt32 GetFrameID();

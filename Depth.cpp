@@ -38,7 +38,6 @@
 Depth::Depth(const XnChar* strName) :
   m_bGenerating(FALSE),
   m_bDataAvailable(FALSE),
-  m_pDepthMap(NULL),
   m_nFrameID(0),
   m_nTimestamp(0),
   m_hScheduler(NULL),
@@ -49,7 +48,6 @@ Depth::Depth(const XnChar* strName) :
 Depth::~Depth()
 {
   openni::OpenNI::shutdown();
-  delete[] m_pDepthMap;
 }
 
 XnStatus Depth::Init()
@@ -101,13 +99,6 @@ XnStatus Depth::Init()
 
   m_lastFrame = device.getPlaybackControl()->getNumberOfFrames(videoStream);
   
-  m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
-
-  if (m_pDepthMap == NULL)
-  {
-    return XN_STATUS_ALLOC_FAILED;
-  }
-
   return (XN_STATUS_OK);
 }
 
@@ -200,12 +191,6 @@ XnStatus Depth::UpdateData()
   m_bDataAvailable = FALSE;
   
   return (XN_STATUS_OK);
-}
-
-
-const void* Depth::GetData()
-{
-  return m_pDepthMap;
 }
 
 XnUInt32 Depth::GetDataSize()
@@ -306,7 +291,9 @@ void Depth::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 
 XnDepthPixel* Depth::GetDepthMap()
 {
-  return m_pDepthMap;
+  if(*((int*)(&videoFrame)) != 0) //Check if videoframe is good. (dirty hack, i'm so sorry)
+    return (XnDepthPixel*) videoFrame.getData();
+  return NULL;
 }
 
 XnDepthPixel Depth::GetDeviceMaxDepth()
