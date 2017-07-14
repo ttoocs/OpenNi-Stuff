@@ -24,8 +24,8 @@
 #include <OpenNI.h>
 
 class Depth :
-  public virtual xn::ModuleDepthGenerator,
-  public virtual xn::ModuleMirrorInterface
+//  public virtual xn::ModuleDepthGenerator,  public virtual xn::ModuleMirrorInterface
+  public virtual xn::ModuleDepthGenerator
 {
 public:
   Depth(const XnChar* strName);
@@ -49,13 +49,15 @@ public:
   virtual XnUInt32 GetDataSize();
   virtual XnUInt64 GetTimestamp();
   virtual XnUInt32 GetFrameID();
-  virtual xn::ModuleMirrorInterface* GetMirrorInterface();
 
+  /*
   // Mirror methods
+  virtual xn::ModuleMirrorInterface* GetMirrorInterface();
   virtual XnStatus SetMirror(XnBool bMirror);
   virtual XnBool IsMirrored();
   virtual XnStatus RegisterToMirrorChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
   virtual void UnregisterFromMirrorChange(XnCallbackHandle hCallback);
+*/
 
   // MapGenerator methods
   virtual XnUInt32 GetSupportedMapOutputModesCount();

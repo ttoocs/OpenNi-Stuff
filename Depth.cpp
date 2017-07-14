@@ -173,7 +173,6 @@ XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 XnStatus Depth::UpdateData()
 {
 
-// /*
   if(m_nFrameID >=  m_lastFrame -1 ){
     std::cout << "Reached end of recording! FrameID: " << m_nFrameID << " numFrames: " << m_lastFrame  << std::endl;
     std::cout << "TODO: Handle this properly." << std::endl;
@@ -208,6 +207,7 @@ XnUInt32 Depth::GetFrameID()
   return m_nFrameID;
 }
 
+/*
 xn::ModuleMirrorInterface* Depth::GetMirrorInterface()
 {
   return this;
@@ -234,6 +234,8 @@ void Depth::UnregisterFromMirrorChange( XnCallbackHandle hCallback )
 {
   m_mirrorEvent.Unregister(hCallback);
 }
+
+*/
 
 XnUInt32 Depth::GetSupportedMapOutputModesCount()
 {
