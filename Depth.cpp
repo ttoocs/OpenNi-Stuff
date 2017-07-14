@@ -114,7 +114,7 @@ XnStatus Depth::StartGenerating()
 	m_bGenerating = TRUE;
 
 
-  /* Origonal code
+//  /* Origonal code
 	// start scheduler thread
 	nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
 	if (nRetVal != XN_STATUS_OK)
@@ -136,7 +136,7 @@ void Depth::StopGenerating()
 {
 	m_bGenerating = FALSE;
 
-  /* Origonal code
+//  /* Origonal code
 	// wait for thread to exit
   xnOSWaitForThreadExit(m_hScheduler, 100);
 
@@ -173,7 +173,8 @@ XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 
 XnStatus Depth::UpdateData()
 {
-  
+
+//  /* Origonal Code  
 	XnDepthPixel* pPixel = m_pDepthMap;
 
 	// change our internal data, so that pixels go from frameID incrementally in both axes.
@@ -210,6 +211,7 @@ XnStatus Depth::UpdateData()
 	// mark that data is old
 	m_bDataAvailable = FALSE;
 	
+// */
 	return (XN_STATUS_OK);
   
 }
