@@ -80,6 +80,8 @@ private:
   openni::Device mydevice;
   openni::VideoStream mydepthStream;
 
+  XnInt m_lastFPS;
+  XnUInt32 m_lastFrame;
 	XnBool m_bGenerating;
 	XnBool m_bDataAvailable;
 	XnDepthPixel* m_pDepthMap;
