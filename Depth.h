@@ -77,9 +77,10 @@ private:
   static XN_THREAD_PROC SchedulerThread(void* pCookie);
   void OnNewFrame();
 
-  openni::Device mydevice;
-  openni::VideoStream mydepthStream;
-
+  openni::Device device;
+  openni::VideoStream videoStream;
+  openni::VideoFrameRef videoFrame;
+  
   XnInt m_lastFPS;
   XnUInt32 m_lastFrame;
   XnBool m_bGenerating;

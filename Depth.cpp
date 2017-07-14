@@ -30,9 +30,9 @@
 //#define SUPPORTED_FPS 30
 #define MAX_DEPTH_VALUE 15000
 
-#define SUPPORTED_X_RES mydepthStream.getVideoMode().getResolutionX()
-#define SUPPORTED_Y_RES mydepthStream.getVideoMode().getResolutionY()
-//#define SUPPORTED_FPS mydepthStream.getVideoMode().getFps()
+#define SUPPORTED_X_RES videoStream.getVideoMode().getResolutionX()
+#define SUPPORTED_Y_RES videoStream.getVideoMode().getResolutionY()
+//#define SUPPORTED_FPS videoStream.getVideoMode().getFps()
 #define SUPPORTED_FPS m_lastFPS
 
 Depth::Depth(const XnChar* strName) :
@@ -42,7 +42,6 @@ Depth::Depth(const XnChar* strName) :
   m_nFrameID(0),
   m_nTimestamp(0),
   m_hScheduler(NULL),
-  m_bMirror(FALSE),
   m_lastFPS(30)
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
@@ -65,7 +64,7 @@ XnStatus Depth::Init()
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  r = mydevice.open(m_strName);
+  r = device.open(m_strName);
   if (r != openni::STATUS_OK){
     if(openni::OpenNI::getExtendedError() != ""){
       std::cout << "OpenNi2 open failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
@@ -75,33 +74,33 @@ XnStatus Depth::Init()
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  r = mydevice.getPlaybackControl()->setSpeed(-1);
+  r = device.getPlaybackControl()->setSpeed(-1);
   if (r != openni::STATUS_OK){
     std::cout << "OpenNi2 set playback speed failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-//  r = mydevice.getPlaybackControl()->setRepeatEnabled(TRUE); //Only good for debugging
-  r = mydevice.getPlaybackControl()->setRepeatEnabled(FALSE);
+//  r = device.getPlaybackControl()->setRepeatEnabled(TRUE); //Only good for debugging
+  r = device.getPlaybackControl()->setRepeatEnabled(FALSE);
   if (r != openni::STATUS_OK){
     std::cout << "OpenNi2 set playback repeat failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  r = mydepthStream.create(mydevice, openni::SENSOR_DEPTH);
+  r = videoStream.create(device, openni::SENSOR_DEPTH);
   if (r != openni::STATUS_OK){
     std::cout << "OpenNi2 create stream failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  r = mydepthStream.start();
+  r = videoStream.start();
   if (r != openni::STATUS_OK){
     std::cout << "OpenNi2 start stream  failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  m_lastFrame = mydevice.getPlaybackControl()->getNumberOfFrames(mydepthStream);
-
+  m_lastFrame = device.getPlaybackControl()->getNumberOfFrames(videoStream);
+  
   m_pDepthMap = new XnDepthPixel[SUPPORTED_X_RES * SUPPORTED_Y_RES];
 
   if (m_pDepthMap == NULL)
@@ -191,66 +190,16 @@ XnStatus Depth::UpdateData()
     m_bGenerating = FALSE;
     return (XN_STATUS_OK);
   }
-  openni::VideoFrameRef depthFrame;
-  mydepthStream.readFrame(&depthFrame);
-//  std::cout << mydepthStream.getVideoMode().getPixelFormat() << std::endl;
-//  PIXEL_FORMAT_DEPTH_1_MM = 100,  ***********
-//  PIXEL_FORMAT_DEPTH_100_UM = 101,
-//  PIXEL_FORMAT_SHIFT_9_2 = 102,
-//  PIXEL_FORMAT_SHIFT_9_3 = 103,
+  videoStream.readFrame(&videoFrame);
 
- // XnDepthPixel* pPixel = m_pDepthMap;
- // pPixel = (XnDepthPixel *) depthFrame.getData();
-  //Note: From XnTypes.h in openni1 and OpenNI.h in openni2, these are both uint16_t.
+  m_pDepthMap = (XnDepthPixel *) videoFrame.getData();
 
-  m_pDepthMap = (XnDepthPixel *) depthFrame.getData();
-
-  m_nFrameID = depthFrame.getFrameIndex();
-  m_nTimestamp = depthFrame.getTimestamp();
+  m_nFrameID = videoFrame.getFrameIndex();
+  m_nTimestamp = videoFrame.getTimestamp();
   // mark that data is old
   m_bDataAvailable = FALSE;
-
-// */
-  /* Origonal Code
-  XnDepthPixel* pPixel = m_pDepthMap;
-
-  // change our internal data, so that pixels go from frameID incrementally in both axes.
-  for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
-  {
-    for (XnUInt x = 0; x < SUPPORTED_X_RES; ++x, ++pPixel)
-    {
-      *pPixel = (m_nFrameID + x + y) % MAX_DEPTH_VALUE;
-    }
-  }
-
-  // if needed, mirror the map
-  if (m_bMirror)
-  {
-    XnDepthPixel temp;
-
-    for (XnUInt y = 0; y < SUPPORTED_Y_RES; ++y)
-    {
-      XnDepthPixel* pUp = &m_pDepthMap[y * SUPPORTED_X_RES];
-      XnDepthPixel* pDown = &m_pDepthMap[(y+1) * SUPPORTED_X_RES - 1];
-
-      for (XnUInt x = 0; x < SUPPORTED_X_RES/2; ++x, ++pUp, --pDown)
-      {
-        temp = *pUp;
-        *pUp = *pDown;
-        *pDown = temp;
-      }
-    }
-  }
-
-  m_nFrameID++;
-  m_nTimestamp += 1000000 / SUPPORTED_FPS;
-
-  // mark that data is old
-  m_bDataAvailable = FALSE;
-
-// */
+  
   return (XN_STATUS_OK);
-
 }
 
 
