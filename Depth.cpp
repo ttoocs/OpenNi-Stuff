@@ -207,35 +207,6 @@ XnUInt32 Depth::GetFrameID()
   return m_nFrameID;
 }
 
-/*
-xn::ModuleMirrorInterface* Depth::GetMirrorInterface()
-{
-  return this;
-}
-
-XnStatus Depth::SetMirror( XnBool bMirror )
-{
-  m_bMirror = bMirror;
-  m_mirrorEvent.Raise();
-  return (XN_STATUS_OK);
-}
-
-XnBool Depth::IsMirrored()
-{
-  return m_bMirror;
-}
-
-XnStatus Depth::RegisterToMirrorChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
-{
-  return m_mirrorEvent.Register(handler, pCookie, hCallback);
-}
-
-void Depth::UnregisterFromMirrorChange( XnCallbackHandle hCallback )
-{
-  m_mirrorEvent.Unregister(hCallback);
-}
-
-*/
 
 XnUInt32 Depth::GetSupportedMapOutputModesCount()
 {
