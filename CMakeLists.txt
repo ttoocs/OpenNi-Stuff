@@ -10,6 +10,7 @@ find_package(OpenNI2 REQUIRED)
 
 add_definitions(
   -g
+  -O3
 )
 
 set(
