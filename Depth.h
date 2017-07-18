@@ -24,7 +24,8 @@
 #include <OpenNI.h>
 
 class Depth :
-  public virtual xn::ModuleDepthGenerator
+  //public virtual xn::ModuleDepthGenerator
+  public virtual xn::ModuleDepthGenerator, public virtual openni::VideoStream::NewFrameListener
 {
 public:
   Depth(const XnChar* strName);
@@ -63,6 +64,9 @@ public:
   virtual void GetFieldOfView(XnFieldOfView& FOV);
   virtual XnStatus RegisterToFieldOfViewChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
   virtual void UnregisterFromFieldOfViewChange(XnCallbackHandle hCallback);
+
+  // VideoStream Listener
+  virtual void onNewFrame(openni::VideoStream& vs);
 
 private:
   static XN_THREAD_PROC SchedulerThread(void* pCookie);

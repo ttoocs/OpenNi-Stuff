@@ -113,7 +113,10 @@ XnStatus Depth::StartGenerating()
 
   m_bGenerating = TRUE;
 
-//  /* Origonal code
+  videoStream.addNewFrameListener(this);
+  device.getPlaybackControl()->setSpeed(1);
+
+  /* Origonal code
   // start scheduler thread
   nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
   if (nRetVal != XN_STATUS_OK)
@@ -134,10 +137,14 @@ XnBool Depth::IsGenerating()
 void Depth::StopGenerating()
 {
   m_bGenerating = FALSE;
+  
+  
+  videoStream.removeNewFrameListener(this);
+  device.getPlaybackControl()->setSpeed(-1);
 
 //  /* Origonal code
   // wait for thread to exit
-  xnOSWaitForThreadExit(m_hScheduler, 100);
+//  xnOSWaitForThreadExit(m_hScheduler, 100);
 
 //  */
   m_generatingEvent.Raise();
@@ -180,7 +187,8 @@ XnStatus Depth::UpdateData()
     m_bGenerating = FALSE;
     return (XN_STATUS_OK);
   }
-  videoStream.readFrame(&videoFrame);
+  //If using oldcode:
+  //videoStream.readFrame(&videoFrame);
 
   m_pDepthMap = (XnDepthPixel *) videoFrame.getData();
 
@@ -314,4 +322,9 @@ void Depth::OnNewFrame()
 {
   m_bDataAvailable = TRUE;
   m_dataAvailableEvent.Raise();
+}
+void Depth::onNewFrame(openni::VideoStream& vs)
+{
+  videoStream.readFrame(&videoFrame);
+  this->OnNewFrame();
 }
