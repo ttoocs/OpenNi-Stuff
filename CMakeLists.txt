@@ -27,8 +27,8 @@ include_directories(
 #link_directories(  ${PCL_LIBRARY_DIRS})
 #add_definitions(${PCL_DEFINITIONS})
 
-add_library (depth SHARED Depth.cpp)
-target_link_libraries (depth ${OPENNI2_LIBRARY})
+add_library (oni2stuff SHARED depth/Depth.cpp image/Image.cpp)
+target_link_libraries (oni2stuff ${OPENNI2_LIBRARY})
 
-add_library (oni2input SHARED ExportedDepth.cpp Registration.cpp)
-target_link_libraries(oni2input depth)
+add_library (oni2input SHARED depth/ExportedDepth.cpp image/ExportedImage.cpp Registration.cpp)
+target_link_libraries(oni2input oni2stuff)

@@ -20,19 +20,18 @@
 //---------------------------------------------------------------------------
 #include <iostream>
 
-#include "Depth.h"
+#include "Image.h"
 
 //#define SUPPORTED_X_RES 400
 //#define SUPPORTED_Y_RES 300
 //#define SUPPORTED_FPS 30
-#define MAX_DEPTH_VALUE 15000
 
 #define SUPPORTED_X_RES videoStream.getVideoMode().getResolutionX()
 #define SUPPORTED_Y_RES videoStream.getVideoMode().getResolutionY()
 //#define SUPPORTED_FPS videoStream.getVideoMode().getFps()
 #define SUPPORTED_FPS m_lastFPS
 
-Depth::Depth(const XnChar* strName) :
+Image::Image(const XnChar* strName) :
   m_bGenerating(FALSE),
   m_bDataAvailable(FALSE),
   m_nFrameID(0),
@@ -42,14 +41,14 @@ Depth::Depth(const XnChar* strName) :
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
 }
-Depth::~Depth()
+Image::~Image()
 {
   openni::OpenNI::shutdown();
 }
 
-XnStatus Depth::Init()
+XnStatus Image::Init()
 {
-  std::cout << "OpenNI2 Depth: Init filename: " << m_strName << std::endl;
+  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
 
   openni::Status r;
 
@@ -82,7 +81,7 @@ XnStatus Depth::Init()
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
-  r = videoStream.create(device, openni::SENSOR_DEPTH);
+  r = videoStream.create(device, openni::SENSOR_COLOR);
   if (r != openni::STATUS_OK){
     std::cout << "OpenNi2 create stream failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
@@ -99,12 +98,12 @@ XnStatus Depth::Init()
   return (XN_STATUS_OK);
 }
 
-XnBool Depth::IsCapabilitySupported( const XnChar* strCapabilityName )
+XnBool Image::IsCapabilitySupported( const XnChar* strCapabilityName )
 {
   return FALSE;
 }
 
-XnStatus Depth::StartGenerating()
+XnStatus Image::StartGenerating()
 {
   XnStatus nRetVal = XN_STATUS_OK;
 
@@ -113,68 +112,52 @@ XnStatus Depth::StartGenerating()
   videoStream.addNewFrameListener(this);
   device.getPlaybackControl()->setSpeed(1);
 
-  /* Origonal code
-  // start scheduler thread
-  nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
-  if (nRetVal != XN_STATUS_OK)
-  {
-    m_bGenerating = FALSE;
-    return (nRetVal);
-  }
-  m_generatingEvent.Raise();
-// */
   return (XN_STATUS_OK);
 }
 
-XnBool Depth::IsGenerating()
+XnBool Image::IsGenerating()
 {
   return m_bGenerating;
 }
 
-void Depth::StopGenerating()
+void Image::StopGenerating()
 {
   m_bGenerating = FALSE;
-  
   
   videoStream.removeNewFrameListener(this);
   device.getPlaybackControl()->setSpeed(-1);
 
-//  /* Origonal code
-  // wait for thread to exit
-//  xnOSWaitForThreadExit(m_hScheduler, 100);
-
-//  */
   m_generatingEvent.Raise();
 }
 
-XnStatus Depth::RegisterToGenerationRunningChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
+XnStatus Image::RegisterToGenerationRunningChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
 {
   return m_generatingEvent.Register(handler, pCookie, hCallback);
 }
 
-void Depth::UnregisterFromGenerationRunningChange( XnCallbackHandle hCallback )
+void Image::UnregisterFromGenerationRunningChange( XnCallbackHandle hCallback )
 {
   m_generatingEvent.Unregister(hCallback);
 }
 
-XnStatus Depth::RegisterToNewDataAvailable( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
+XnStatus Image::RegisterToNewDataAvailable( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback )
 {
   return m_dataAvailableEvent.Register(handler, pCookie, hCallback);
 }
 
-void Depth::UnregisterFromNewDataAvailable( XnCallbackHandle hCallback )
+void Image::UnregisterFromNewDataAvailable( XnCallbackHandle hCallback )
 {
   m_dataAvailableEvent.Unregister(hCallback);
 }
 
-XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
+XnBool Image::IsNewDataAvailable( XnUInt64& nTimestamp )
 {
   // return next timestamp
-  nTimestamp = 1000000 / SUPPORTED_FPS;
+  nTimestamp = NULL;
   return m_bDataAvailable;
 }
 
-XnStatus Depth::UpdateData()
+XnStatus Image::UpdateData()
 {
 
   if(m_nFrameID >=  m_lastFrame -1 ){
@@ -187,7 +170,7 @@ XnStatus Depth::UpdateData()
   //If using oldcode:
   //videoStream.readFrame(&videoFrame);
 
-  m_pDepthMap = (XnDepthPixel *) videoFrame.getData();
+  m_pImageMap = (XnImagePixel *) videoFrame.getData();
 
   m_nFrameID = videoFrame.getFrameIndex();
   m_nTimestamp = videoFrame.getTimestamp();
@@ -197,29 +180,29 @@ XnStatus Depth::UpdateData()
   return (XN_STATUS_OK);
 }
 
-XnUInt32 Depth::GetDataSize()
+XnUInt32 Image::GetDataSize()
 {
-  return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnDepthPixel));
+  return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnImagePixel));
 }
 
-XnUInt64 Depth::GetTimestamp()
+XnUInt64 Image::GetTimestamp()
 {
   return m_nTimestamp;
 }
 
-XnUInt32 Depth::GetFrameID()
+XnUInt32 Image::GetFrameID()
 {
   return m_nFrameID;
 }
 
 
-XnUInt32 Depth::GetSupportedMapOutputModesCount()
+XnUInt32 Image::GetSupportedMapOutputModesCount()
 {
   // we only support a single mode
   return 1;
 }
 
-XnStatus Depth::GetSupportedMapOutputModes( XnMapOutputMode aModes[], XnUInt32& nCount )
+XnStatus Image::GetSupportedMapOutputModes( XnMapOutputMode aModes[], XnUInt32& nCount )
 {
   if (nCount < 1)
   {
@@ -233,7 +216,7 @@ XnStatus Depth::GetSupportedMapOutputModes( XnMapOutputMode aModes[], XnUInt32& 
   return (XN_STATUS_OK);
 }
 
-XnStatus Depth::SetMapOutputMode( const XnMapOutputMode& Mode )
+XnStatus Image::SetMapOutputMode( const XnMapOutputMode& Mode )
 {
   // make sure this is our supported mode
   if (Mode.nXRes != SUPPORTED_X_RES ||
@@ -246,7 +229,7 @@ XnStatus Depth::SetMapOutputMode( const XnMapOutputMode& Mode )
   return (XN_STATUS_OK);
 }
 
-XnStatus Depth::GetMapOutputMode( XnMapOutputMode& Mode )
+XnStatus Image::GetMapOutputMode( XnMapOutputMode& Mode )
 {
   Mode.nXRes = SUPPORTED_X_RES;
   Mode.nYRes = SUPPORTED_Y_RES;
@@ -255,52 +238,48 @@ XnStatus Depth::GetMapOutputMode( XnMapOutputMode& Mode )
   return (XN_STATUS_OK);
 }
 
-XnStatus Depth::RegisterToMapOutputModeChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
+XnStatus Image::RegisterToMapOutputModeChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
 {
   // no need. we only allow one mode
   hCallback = this;
   return XN_STATUS_OK;
 }
 
-void Depth::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
+void Image::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 {
   // do nothing (we didn't really register)
 }
 
-XnDepthPixel* Depth::GetDepthMap()
+XnUInt8* Image::GetImageMap()
 {
   if(*((int*)(&videoFrame)) != 0) //Check if videoframe is good. (dirty hack, i'm so sorry)
-    return (XnDepthPixel*) videoFrame.getData();
+    return (XnUInt8*) videoFrame.getData();
   return NULL;
 }
 
-XnDepthPixel Depth::GetDeviceMaxDepth()
-{
-  return MAX_DEPTH_VALUE;
-}
 
-void Depth::GetFieldOfView( XnFieldOfView& FOV )
+void Image::GetFieldOfView( XnFieldOfView& FOV )
 {
   // some numbers
   FOV.fHFOV = 1.35;
   FOV.fVFOV = 1.35;
 }
 
-XnStatus Depth::RegisterToFieldOfViewChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
+XnStatus Image::RegisterToFieldOfViewChange( XnModuleStateChangedHandler /*handler*/, void* /*pCookie*/, XnCallbackHandle& hCallback )
 {
   // no need. it never changes
   hCallback = this;
   return XN_STATUS_OK;
 }
 
-void Depth::UnregisterFromFieldOfViewChange( XnCallbackHandle /*hCallback*/ )
+void Image::UnregisterFromFieldOfViewChange( XnCallbackHandle /*hCallback*/ )
 {
   // do nothing (we didn't really register)
 }
 
-XN_THREAD_PROC Depth::SchedulerThread( void* pCookie )
+XN_THREAD_PROC Image::SchedulerThread( void* pCookie )
 {
-  Depth* pThis = (Depth*)pCookie;
+  Image* pThis = (Image*)pCookie;
 
   while (pThis->m_bGenerating)
   {
@@ -315,13 +294,31 @@ XN_THREAD_PROC Depth::SchedulerThread( void* pCookie )
   XN_THREAD_PROC_RETURN(0);
 }
 
-void Depth::OnNewFrame()
+void Image::OnNewFrame()
 {
   m_bDataAvailable = TRUE;
   m_dataAvailableEvent.Raise();
 }
-void Depth::onNewFrame(openni::VideoStream& vs)
+void Image::onNewFrame(openni::VideoStream& vs)
 {
   videoStream.readFrame(&videoFrame);
   OnNewFrame();
 }
+
+
+//Misc img stuffs
+XnBool Image::IsPixelFormatSupported(XnPixelFormat Format){
+  return (Format == XN_PIXEL_FORMAT_RGB24);
+}
+
+XnStatus Image::SetPixelFormat(XnPixelFormat Format){
+  if(Format == XN_PIXEL_FORMAT_RGB24)
+    return (XN_STATUS_OK);
+  return  (XN_STATUS_BAD_PARAM);
+}
+
+XnPixelFormat Image::GetPixelFormat(){
+  return XN_PIXEL_FORMAT_RGB24;
+}
+
+
