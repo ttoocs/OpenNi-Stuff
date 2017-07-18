@@ -1,9 +1,6 @@
 /*****************************************************************************
 *                                                                            *
-*  OpenNI 1.x Alpha                                                          *
-*  Copyright (C) 2012 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of OpenNI.                                              *
+*  ttoocs                                                                    *
 *                                                                            *
 *  Licensed under the Apache License, Version 2.0 (the "License");           *
 *  you may not use this file except in compliance with the License.          *
@@ -326,5 +323,5 @@ void Depth::OnNewFrame()
 void Depth::onNewFrame(openni::VideoStream& vs)
 {
   videoStream.readFrame(&videoFrame);
-  this->OnNewFrame();
+  OnNewFrame();
 }
