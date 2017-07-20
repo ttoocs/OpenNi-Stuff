@@ -59,7 +59,11 @@ XnStatus Depth::Init()
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
+#ifdef ANY_STREAM
+  r = device.open(openni::ANY_DEVICE);
+#else
   r = device.open(m_strName);
+#endif
   if (r != openni::STATUS_OK){
     if(openni::OpenNI::getExtendedError() != ""){
       std::cout << "OpenNi2 open failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
