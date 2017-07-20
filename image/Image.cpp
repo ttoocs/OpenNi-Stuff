@@ -22,6 +22,11 @@
 
 #include "Image.h"
 
+#ifdef SAVE_IMG
+#include <string>
+#include <opencv2/opencv.hpp>
+#endif
+
 //#define SUPPORTED_X_RES 400
 //#define SUPPORTED_Y_RES 300
 //#define SUPPORTED_FPS 30
@@ -300,6 +305,21 @@ XN_THREAD_PROC Image::SchedulerThread( void* pCookie )
 
 void Image::OnNewFrame()
 {
+  #ifdef SAVE_IMG
+  if(!videoFrame.isValid()){
+     std::cout << "TEST IF VIDEOSTREAM VALID : " << videoStream.isValid()  << std::endl;
+     videoStream.readFrame(&videoFrame);
+     std::cout << "TEST IF BLOCKING 2" << std::endl;
+  }
+  cv::Mat image;
+  std::string path = "img_" + std::to_string(videoFrame.getFrameIndex()) + ".jpg";
+
+  image = cv::Mat(videoFrame.getHeight(), videoFrame.getWidth(), videoFrame.getDataSize() / (videoFrame.getHeight() * videoFrame.getWidth()) ,  (openni::RGB888Pixel*) videoFrame.getData());
+  
+  std::cout << "Saving image as: " << path << std::endl;
+  cv::imwrite(path,image);
+  #endif
+
   m_bDataAvailable = TRUE;
   m_dataAvailableEvent.Raise();
 }
