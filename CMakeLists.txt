@@ -12,7 +12,7 @@ find_package(OpenCV REQUIRED)
 add_definitions(
   -g
   -O3
-  -DBY_SCHEDULE
+#  -DBY_SCHEDULE
   -DSAVE_IMG
 #  -DANY_STREAM
 )
