@@ -118,8 +118,25 @@ XnStatus Image::StartGenerating()
 
   m_bGenerating = TRUE;
 
-  videoStream.addNewFrameListener(this);
-  device.getPlaybackControl()->setSpeed(1);
+  #ifdef BY_SCHEDULE
+    // start scheduler thread
+  
+    std::cout << " Using Scheduled fps " << std::endl;    
+
+    nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
+    if (nRetVal != XN_STATUS_OK)
+    {
+      m_bGenerating = FALSE;
+    std::cout << " Using Scheduled fps : FAILED TO START" << std::endl;    
+      return (nRetVal);
+    }
+  #else
+    videoStream.addNewFrameListener(this);
+    device.getPlaybackControl()->setSpeed(1);
+
+  #endif
+
+  m_generatingEvent.Raise();
 
   return (XN_STATUS_OK);
 }
@@ -133,8 +150,13 @@ void Image::StopGenerating()
 {
   m_bGenerating = FALSE;
   
-  videoStream.removeNewFrameListener(this);
-  device.getPlaybackControl()->setSpeed(-1);
+  #ifdef BY_SCHEDULE
+    // wait for thread to exit
+    xnOSWaitForThreadExit(m_hScheduler, 100);
+  #else
+    videoStream.removeNewFrameListener(this);
+    device.getPlaybackControl()->setSpeed(-1);
+  #endif
 
   m_generatingEvent.Raise();
 }
@@ -176,8 +198,9 @@ XnStatus Image::UpdateData()
     m_bGenerating = FALSE;
     return (XN_STATUS_OK);
   }
-  //If using oldcode:
-  //videoStream.readFrame(&videoFrame);
+  #ifdef BY_SCHEDULE
+    videoStream.readFrame(&videoFrame);
+  #endif
 
   m_pImageMap = (XnImagePixel *) videoFrame.getData();
 
