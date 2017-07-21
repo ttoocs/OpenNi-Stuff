@@ -18,7 +18,7 @@
 *  limitations under the License.                                            *
 *                                                                            *
 *****************************************************************************/
-#include "depth/ExportedDepth.h"
+//#include "depth/ExportedDepth.h"
 #include "image/ExportedImage.h"
 #include <XnModuleCppRegistratration.h>
 
@@ -26,5 +26,5 @@
 XN_EXPORT_MODULE(Module)
 
 // tell OpenNI we export a depth node, and give it its exporter class.
-XN_EXPORT_DEPTH(ExportedDepth)
+//XN_EXPORT_DEPTH(ExportedDepth)
 XN_EXPORT_IMAGE(ExportedImage)

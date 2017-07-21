@@ -46,7 +46,7 @@ XnStatus ExportedImage::Create( xn::Context& /*context*/, const XnChar* /*strIns
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-  const char* inputfile = "in.oni";
+  const char* inputfile = "./";
 	Image* pImage = new Image(inputfile);
 
 	nRetVal = pImage->Init();

@@ -8,13 +8,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/" ${CMAKE_MODUL
 find_package(OpenNI REQUIRED)
 find_package(OpenNI2 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 add_definitions(
   -g
   -O3
-#  -DBY_SCHEDULE
-  -DSAVE_IMG
-#  -DANY_STREAM
 )
 
 set(
@@ -23,15 +21,20 @@ set(
 )
 
 include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${OPENNI_INCLUDE_DIR}
   ${OPENNI2_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 #include_directories(${PCL_INCLUDE_DIRS})
 #link_directories(  ${PCL_LIBRARY_DIRS})
 #add_definitions(${PCL_DEFINITIONS})
 
-add_library (oni2stuff SHARED depth/Depth.cpp image/Image.cpp)
-target_link_libraries (oni2stuff ${OPENNI2_LIBRARY} ${OpenCV_LIBS})
 
-add_library (oni2input SHARED depth/ExportedDepth.cpp image/ExportedImage.cpp Registration.cpp)
+add_library (oni2stuff SHARED image/Image.cpp cvin.cpp)
+#add_library (oni2stuff SHARED depth/Depth.cpp image/Image.cpp cvin.cpp)
+target_link_libraries (oni2stuff ${OPENNI2_LIBRARY} ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
+#add_library (oni2input SHARED depth/ExportedDepth.cpp image/ExportedImage.cpp Registration.cpp)
+add_library (oni2input SHARED image/ExportedImage.cpp Registration.cpp)
 target_link_libraries(oni2input oni2stuff)

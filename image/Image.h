@@ -18,13 +18,14 @@
 #include <XnModuleCppInterface.h>
 #include <XnEventT.h>
 
+#include "cvin.h"
 #include <OpenNI.h>
 
 typedef XnRGB24Pixel XnImagePixel;
 
 class Image :
   //public virtual xn::ModuleImageGenerator
-  public virtual xn::ModuleImageGenerator, public virtual openni::VideoStream::NewFrameListener
+  public virtual xn::ModuleImageGenerator //, public virtual openni::VideoStream::NewFrameListener
 {
 public:
   Image(const XnChar* strName);
@@ -70,17 +71,13 @@ public:
   virtual XnStatus RegisterToFieldOfViewChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
   virtual void UnregisterFromFieldOfViewChange(XnCallbackHandle hCallback);
 
-  // VideoStream Listener
-  virtual void onNewFrame(openni::VideoStream& vs);
-
 private:
   static XN_THREAD_PROC SchedulerThread(void* pCookie);
   void OnNewFrame();
 
-  openni::Device device;
-  openni::VideoStream videoStream;
-  openni::VideoFrameRef videoFrame;
-  
+  cv::Mat m_lFrame; 
+  CVIN imgin;
+ 
   XnInt m_lastFPS;
   XnUInt32 m_lastFrame;
   XnBool m_bGenerating;
