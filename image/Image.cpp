@@ -28,8 +28,8 @@
 #endif
 
 
-#define SUPPORTED_X_RES m_lFrame.cols
-#define SUPPORTED_Y_RES m_lFrame.rows
+#define SUPPORTED_X_RES m_IFrame.cols
+#define SUPPORTED_Y_RES m_IFrame.rows
 #define SUPPORTED_FPS   m_lastFPS
 
 Image::Image(const XnChar* strName) :
@@ -50,8 +50,12 @@ Image::~Image()
 
 XnStatus Image::Init()
 {
-  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
-  imgin.getNextFrames(NULL,&m_lFrame);
+//  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
+  imgin.getNextFrames(m_DFrame,m_IFrame);
+  
+//  std::cout << "Num Cols: " << m_IFrame.cols << std::endl;
+//  std::cout << "Num Rows: " << m_IFrame.rows << std::endl;
+
   return (XN_STATUS_OK);
 }
 
@@ -121,9 +125,9 @@ XnBool Image::IsNewDataAvailable( XnUInt64& nTimestamp )
 
 XnStatus Image::UpdateData()
 {
-  imgin.getNextFrames(NULL,&m_lFrame);
+  imgin.getNextFrames(m_DFrame,m_IFrame);
 
-  m_pImageMap = (XnImagePixel *) m_lFrame.data;
+  m_pImageMap = (XnImagePixel *) m_IFrame.data;
   
   m_nFrameID++;
   // mark that data is old
@@ -134,7 +138,7 @@ XnStatus Image::UpdateData()
 
 XnUInt32 Image::GetDataSize()
 {
-  return( (XnUInt32 ) m_lFrame.total() * m_lFrame.elemSize() );
+  return( (XnUInt32 ) m_IFrame.total() * m_IFrame.elemSize() );
 }
 
 XnUInt64 Image::GetTimestamp()
@@ -204,7 +208,7 @@ void Image::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 
 XnUInt8* Image::GetImageMap()
 {
-  return (XnUInt8*) m_lFrame.data;
+  return (XnUInt8*) m_IFrame.data;
 }
 
 

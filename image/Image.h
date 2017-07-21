@@ -75,7 +75,7 @@ private:
   static XN_THREAD_PROC SchedulerThread(void* pCookie);
   void OnNewFrame();
 
-  cv::Mat m_lFrame; 
+  cv::Mat m_IFrame, m_DFrame; 
   CVIN imgin;
  
   XnInt m_lastFPS;
