@@ -125,6 +125,13 @@ XnBool Image::IsNewDataAvailable( XnUInt64& nTimestamp )
 
 XnStatus Image::UpdateData()
 {
+  int MaxFrame  =  imgin.getNumFrames();
+  int curFrame = imgin.getCurFrames();
+  if(curFrame >= MaxFrame){
+    StopGenerating();
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+    
   imgin.getNextFrames(m_DFrame,m_IFrame);
 
   m_pImageMap = (XnImagePixel *) m_IFrame.data;
