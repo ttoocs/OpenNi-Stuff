@@ -27,10 +27,14 @@
 #include <opencv2/opencv.hpp>
 #endif
 
+//#define SUPPORTED_X_RES 400
+//#define SUPPORTED_Y_RES 300
+//#define SUPPORTED_FPS 30
 
-#define SUPPORTED_X_RES m_IFrame.cols
-#define SUPPORTED_Y_RES m_IFrame.rows
-#define SUPPORTED_FPS   m_lastFPS
+#define SUPPORTED_X_RES videoStream.getVideoMode().getResolutionX()
+#define SUPPORTED_Y_RES videoStream.getVideoMode().getResolutionY()
+//#define SUPPORTED_FPS videoStream.getVideoMode().getFps()
+#define SUPPORTED_FPS m_lastFPS
 
 Image::Image(const XnChar* strName) :
   m_bGenerating(FALSE),
@@ -38,24 +42,72 @@ Image::Image(const XnChar* strName) :
   m_nFrameID(0),
   m_nTimestamp(0),
   m_hScheduler(NULL),
-  cvIn(strName),
   m_lastFPS(30)
 {
-  //std::cout << "PLEASE" << std::endl;
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
 }
 Image::~Image()
 {
+  openni::OpenNI::shutdown();
 }
 
 XnStatus Image::Init()
 {
-//  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
-  cvIn.getNextFrames(m_DFrame,m_IFrame);
-  
-//  std::cout << "Num Cols: " << m_IFrame.cols << std::endl;
-//  std::cout << "Num Rows: " << m_IFrame.rows << std::endl;
+  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
 
+  openni::Status r;
+
+  r = openni::OpenNI::initialize();
+  if (r !=  openni::STATUS_OK){
+      std::cout << "OpenNi2 init failed: " << openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = device.open(m_strName);
+  if (r != openni::STATUS_OK){
+    if(openni::OpenNI::getExtendedError() != ""){
+      std::cout << "OpenNi2 open failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    }else
+      std::cout << "OpenNi2 open failed, for an unknown reason. (maybe a empty file?)" << std::endl;
+  //  throw ffs; //Good for debugging this.
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  std::cout << "Quick debug:" << std::endl;
+  std::cout << "Has IR: " << device.hasSensor(openni::SENSOR_IR) << std::endl;
+  std::cout << "Has COLOR: " << device.hasSensor(openni::SENSOR_COLOR) << std::endl;
+  std::cout << "Has DEPTH: " << device.hasSensor(openni::SENSOR_DEPTH) << std::endl;
+
+
+  r = device.getPlaybackControl()->setSpeed(-1);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 set playback speed failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+//  r = device.getPlaybackControl()->setRepeatEnabled(TRUE); //Only good for debugging
+  r = device.getPlaybackControl()->setRepeatEnabled(FALSE);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 set playback repeat failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = videoStream.create(device, openni::SENSOR_COLOR);
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 create stream failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  r = videoStream.start();
+  if (r != openni::STATUS_OK){
+    std::cout << "OpenNi2 start stream  failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
+  }
+
+  m_lastFrame = device.getPlaybackControl()->getNumberOfFrames(videoStream);
+  
+  std::cout << "Number of image frames: " << m_lastFrame << std::endl;
+ 
   return (XN_STATUS_OK);
 }
 
@@ -70,12 +122,23 @@ XnStatus Image::StartGenerating()
 
   m_bGenerating = TRUE;
 
-  nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
-  if (nRetVal != XN_STATUS_OK)
-  {
-    m_bGenerating = FALSE;
-    return (nRetVal);
-  }
+  #ifdef BY_SCHEDULE
+    // start scheduler thread
+  
+    std::cout << " Using Scheduled fps " << std::endl;    
+
+    nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
+    if (nRetVal != XN_STATUS_OK)
+    {
+      m_bGenerating = FALSE;
+    std::cout << " Using Scheduled fps : FAILED TO START" << std::endl;    
+      return (nRetVal);
+    }
+  #else
+    videoStream.addNewFrameListener(this);
+    device.getPlaybackControl()->setSpeed(1);
+
+  #endif
 
   m_generatingEvent.Raise();
 
@@ -89,9 +152,16 @@ XnBool Image::IsGenerating()
 
 void Image::StopGenerating()
 {
-  m_bGenerating = FALSE;
+//  m_bGenerating = FALSE;
+  m_bGenerating = TRUE;
   
-  xnOSWaitForThreadExit(m_hScheduler, 100);
+  #ifdef BY_SCHEDULE
+    // wait for thread to exit
+  //  xnOSWaitForThreadExit(m_hScheduler, 100);
+  #else
+    videoStream.removeNewFrameListener(this);
+    device.getPlaybackControl()->setSpeed(-1);
+  #endif
 
   m_generatingEvent.Raise();
 }
@@ -119,24 +189,29 @@ void Image::UnregisterFromNewDataAvailable( XnCallbackHandle hCallback )
 XnBool Image::IsNewDataAvailable( XnUInt64& nTimestamp )
 {
   // return next timestamp
-  nTimestamp = NULL;
+//  nTimestamp = NULL;
+  nTimestamp = 1000000 / SUPPORTED_FPS;
   return m_bDataAvailable;
 }
 
 XnStatus Image::UpdateData()
 {
-  int MaxFrame  =  cvIn.getNumFrames();
-  int curFrame = cvIn.getCurFrames();
-  if(curFrame >= MaxFrame){
-    StopGenerating();
-    return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-    
-  cvIn.getNextFrames(m_DFrame,m_IFrame);
 
-  m_pImageMap = (XnImagePixel *) m_IFrame.data;
-  
-  m_nFrameID++;
+  if(m_nFrameID >=  m_lastFrame -1 ){
+    std::cout << "Reached end of recording! FrameID: " << m_nFrameID << " numFrames: " << m_lastFrame  << std::endl;
+    std::cout << "TODO: Handle this properly." << std::endl;
+    m_bDataAvailable = FALSE;
+    m_bGenerating = FALSE;
+    return (XN_STATUS_OK);
+  }
+  #ifdef BY_SCHEDULE
+    videoStream.readFrame(&videoFrame);
+  #endif
+
+  m_pImageMap = (XnImagePixel *) videoFrame.getData();
+
+  m_nFrameID = videoFrame.getFrameIndex();
+  m_nTimestamp = videoFrame.getTimestamp();
   // mark that data is old
   m_bDataAvailable = FALSE;
   
@@ -145,7 +220,7 @@ XnStatus Image::UpdateData()
 
 XnUInt32 Image::GetDataSize()
 {
-  return( (XnUInt32 ) m_IFrame.total() * m_IFrame.elemSize() );
+  return (SUPPORTED_X_RES * SUPPORTED_Y_RES * sizeof(XnImagePixel));
 }
 
 XnUInt64 Image::GetTimestamp()
@@ -215,7 +290,9 @@ void Image::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 
 XnUInt8* Image::GetImageMap()
 {
-  return (XnUInt8*) m_IFrame.data;
+  if(*((int*)(&videoFrame)) != 0) //Check if videoframe is good. (dirty hack, i'm so sorry)
+    return (XnUInt8*) videoFrame.getData();
+  return NULL;
 }
 
 
@@ -242,24 +319,50 @@ XN_THREAD_PROC Image::SchedulerThread( void* pCookie )
 {
   Image* pThis = (Image*)pCookie;
 
-  while (pThis->m_bGenerating)
+//  while (pThis->m_bGenerating)
+  while (true)
   {
     // wait 33 ms (to produce 30 FPS)
-//    xnOSSleep(1000000/SUPPORTED_FPS/1000);
-    xnOSSleep(1000000/pThis->m_lastFPS/1000);
-
+    xnOSSleep(1000000/30/1000);
+//    xnOSSleep(1000000/pThis->m_lastFPS/1000);
+    std::cout << "TEST" << std::endl;
 
     pThis->OnNewFrame();
   }
 
+  std::cout << "ENDING SCHED THREAD" << std::endl;
   XN_THREAD_PROC_RETURN(0);
 }
 
 void Image::OnNewFrame()
 {
+  std::cout << "NEW FRAME" << std::endl;
+  #ifdef SAVE_IMG
+  if(!videoFrame.isValid()){
+     std::cout << "TEST IF VIDEOSTREAM VALID : " << videoStream.isValid()  << std::endl;
+     videoStream.readFrame(&videoFrame);
+     std::cout << "TEST IF BLOCKING 2" << std::endl;
+  }
+  cv::Mat image;
+  std::string path = "img_" + std::to_string(videoFrame.getFrameIndex()) + ".jpg";
+
+  image = cv::Mat(videoFrame.getHeight(), videoFrame.getWidth(), videoFrame.getDataSize() / (videoFrame.getHeight() * videoFrame.getWidth()) ,  (openni::RGB888Pixel*) videoFrame.getData());
+  
+  std::cout << "Saving image as: " << path << std::endl;
+  cv::imwrite(path,image);
+  #endif
 
   m_bDataAvailable = TRUE;
   m_dataAvailableEvent.Raise();
+}
+void Image::onNewFrame(openni::VideoStream& vs)
+{
+  videoStream.readFrame(&videoFrame);
+
+  std::cout << "HELLO?" << std::endl;
+
+
+  OnNewFrame();
 }
 
 

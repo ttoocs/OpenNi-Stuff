@@ -76,7 +76,7 @@ private:
   void OnNewFrame();
 
   cv::Mat m_IFrame, m_DFrame; 
-  CVIN imgin;
+  CVIN cvIn;
  
   XnInt m_lastFPS;
   XnUInt32 m_lastFrame;
