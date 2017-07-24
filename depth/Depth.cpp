@@ -23,15 +23,10 @@
 
 #include "Depth.h"
 
-//#define SUPPORTED_X_RES 400
-//#define SUPPORTED_Y_RES 300
-//#define SUPPORTED_FPS 30
+#define SUPPORTED_X_RES m_DFrame.cols
+#define SUPPORTED_Y_RES m_DFrame.rows
+#define SUPPORTED_FPS   m_lastFPS
 #define MAX_DEPTH_VALUE 15000
-
-#define SUPPORTED_X_RES videoStream.getVideoMode().getResolutionX()
-#define SUPPORTED_Y_RES videoStream.getVideoMode().getResolutionY()
-//#define SUPPORTED_FPS videoStream.getVideoMode().getFps()
-#define SUPPORTED_FPS m_lastFPS
 
 Depth::Depth(const XnChar* strName) :
   m_bGenerating(FALSE),
@@ -39,68 +34,19 @@ Depth::Depth(const XnChar* strName) :
   m_nFrameID(0),
   m_nTimestamp(0),
   m_hScheduler(NULL),
+  cvIn(strName),
   m_lastFPS(30)
 {
   xnOSStrCopy(m_strName, strName, sizeof(m_strName)); //Copy in the strName
 }
 Depth::~Depth()
 {
-  openni::OpenNI::shutdown();
+  
 }
 
 XnStatus Depth::Init()
 {
-  std::cout << "OpenNI2 Depth: Init filename: " << m_strName << std::endl;
-
-  openni::Status r;
-
-  r = openni::OpenNI::initialize();
-  if (r !=  openni::STATUS_OK){
-      std::cout << "OpenNi2 init failed: " << openni::OpenNI::getExtendedError() << std::endl;
-    return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-#ifdef ANY_STREAM
-  r = device.open(openni::ANY_DEVICE);
-#else
-  r = device.open(m_strName);
-#endif
-  if (r != openni::STATUS_OK){
-    if(openni::OpenNI::getExtendedError() != ""){
-      std::cout << "OpenNi2 open failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
-    }else
-      std::cout << "OpenNi2 open failed, for an unknown reason. (maybe a empty file?)" << std::endl;
-  //  throw ffs; //Good for debugging this.
-    return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-  r = device.getPlaybackControl()->setSpeed(-1);
-  if (r != openni::STATUS_OK){
-    std::cout << "OpenNi2 set playback speed failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
-    return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-//  r = device.getPlaybackControl()->setRepeatEnabled(TRUE); //Only good for debugging
-  r = device.getPlaybackControl()->setRepeatEnabled(FALSE);
-  if (r != openni::STATUS_OK){
-    std::cout << "OpenNi2 set playback repeat failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
-    return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-  r = videoStream.create(device, openni::SENSOR_DEPTH);
-  if (r != openni::STATUS_OK){
-    std::cout << "OpenNi2 create stream failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
-    //return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-  r = videoStream.start();
-  if (r != openni::STATUS_OK){
-    std::cout << "OpenNi2 start stream  failed: " <<  openni::OpenNI::getExtendedError() << std::endl;
-    //return XN_STATUS_DEVICE_NOT_CONNECTED;
-  }
-
-  //m_lastFrame = device.getPlaybackControl()->getNumberOfFrames(videoStream);
-  
+  cvIn.getNextFrames(m_DFrame,m_IFrame);
   return (XN_STATUS_OK);
 }
 
@@ -115,11 +61,6 @@ XnStatus Depth::StartGenerating()
 
   m_bGenerating = TRUE;
 
-  videoStream.addNewFrameListener(this);
-  device.getPlaybackControl()->setSpeed(1);
-
-  /* Origonal code
-  // start scheduler thread
   nRetVal = xnOSCreateThread(SchedulerThread, this, &m_hScheduler);
   if (nRetVal != XN_STATUS_OK)
   {
@@ -127,7 +68,7 @@ XnStatus Depth::StartGenerating()
     return (nRetVal);
   }
   m_generatingEvent.Raise();
-// */
+
   return (XN_STATUS_OK);
 }
 
@@ -139,16 +80,9 @@ XnBool Depth::IsGenerating()
 void Depth::StopGenerating()
 {
   m_bGenerating = FALSE;
-  
-  
-  videoStream.removeNewFrameListener(this);
-  device.getPlaybackControl()->setSpeed(-1);
 
-//  /* Origonal code
-  // wait for thread to exit
-//  xnOSWaitForThreadExit(m_hScheduler, 100);
+  xnOSWaitForThreadExit(m_hScheduler, 100);
 
-//  */
   m_generatingEvent.Raise();
 }
 
@@ -182,23 +116,21 @@ XnBool Depth::IsNewDataAvailable( XnUInt64& nTimestamp )
 XnStatus Depth::UpdateData()
 {
 
-  if(m_nFrameID >=  m_lastFrame -1 ){
-    std::cout << "Reached end of recording! FrameID: " << m_nFrameID << " numFrames: " << m_lastFrame  << std::endl;
-    std::cout << "TODO: Handle this properly." << std::endl;
-    m_bDataAvailable = FALSE;
-    m_bGenerating = FALSE;
-    return (XN_STATUS_OK);
+  int MaxFrame  =  cvIn.getNumFrames();
+  int curFrame = cvIn.getCurFrames();
+  if(curFrame >= MaxFrame){
+    StopGenerating();
+    return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
-  //If using oldcode:
-  //videoStream.readFrame(&videoFrame);
+    
+  cvIn.getNextFrames(m_DFrame,m_IFrame);
 
-  m_pDepthMap = (XnDepthPixel *) videoFrame.getData();
-
-  m_nFrameID = videoFrame.getFrameIndex();
-  m_nTimestamp = videoFrame.getTimestamp();
+  m_pDepthMap = (XnDepthPixel *) m_DFrame.data;
+  
+  m_nFrameID = curFrame;
   // mark that data is old
   m_bDataAvailable = FALSE;
-  
+
   return (XN_STATUS_OK);
 }
 
@@ -274,9 +206,7 @@ void Depth::UnregisterFromMapOutputModeChange( XnCallbackHandle /*hCallback*/ )
 
 XnDepthPixel* Depth::GetDepthMap()
 {
-  if(*((int*)(&videoFrame)) != 0) //Check if videoframe is good. (dirty hack, i'm so sorry)
-    return (XnDepthPixel*) videoFrame.getData();
-  return NULL;
+  return (XnDepthPixel*) m_DFrame.data;
 }
 
 XnDepthPixel Depth::GetDeviceMaxDepth()
@@ -324,9 +254,4 @@ void Depth::OnNewFrame()
 {
   m_bDataAvailable = TRUE;
   m_dataAvailableEvent.Raise();
-}
-void Depth::onNewFrame(openni::VideoStream& vs)
-{
-  videoStream.readFrame(&videoFrame);
-  OnNewFrame();
 }

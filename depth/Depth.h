@@ -18,11 +18,10 @@
 #include <XnModuleCppInterface.h>
 #include <XnEventT.h>
 
-#include <OpenNI.h>
+#include "cvin.h"
 
 class Depth :
-  //public virtual xn::ModuleDepthGenerator
-  public virtual xn::ModuleDepthGenerator, public virtual openni::VideoStream::NewFrameListener
+  public virtual xn::ModuleDepthGenerator
 {
 public:
   Depth(const XnChar* strName);
@@ -62,17 +61,14 @@ public:
   virtual XnStatus RegisterToFieldOfViewChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
   virtual void UnregisterFromFieldOfViewChange(XnCallbackHandle hCallback);
 
-  // VideoStream Listener
-  virtual void onNewFrame(openni::VideoStream& vs);
 
 private:
   static XN_THREAD_PROC SchedulerThread(void* pCookie);
   void OnNewFrame();
-
-  openni::Device device;
-  openni::VideoStream videoStream;
-  openni::VideoFrameRef videoFrame;
-  
+ 
+  cv::Mat m_IFrame, m_DFrame;
+  CVIN cvIn; 
+ 
   XnInt m_lastFPS;
   XnUInt32 m_lastFrame;
   XnBool m_bGenerating;

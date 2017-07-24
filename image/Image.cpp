@@ -119,7 +119,7 @@ void Image::UnregisterFromNewDataAvailable( XnCallbackHandle hCallback )
 XnBool Image::IsNewDataAvailable( XnUInt64& nTimestamp )
 {
   // return next timestamp
-  nTimestamp = NULL;
+  nTimestamp = 1000000 / SUPPORTED_FPS;
   return m_bDataAvailable;
 }
 
@@ -136,7 +136,7 @@ XnStatus Image::UpdateData()
 
   m_pImageMap = (XnImagePixel *) m_IFrame.data;
   
-  m_nFrameID++;
+  m_nFrameID = curFrame;
   // mark that data is old
   m_bDataAvailable = FALSE;
   

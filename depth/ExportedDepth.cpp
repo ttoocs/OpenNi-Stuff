@@ -46,7 +46,7 @@ XnStatus ExportedDepth::Create( xn::Context& /*context*/, const XnChar* /*strIns
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-  const char* inputfile = "in.oni";
+  const char* inputfile = "./";
 	Depth* pDepth = new Depth(inputfile);
 
 	nRetVal = pDepth->Init();
