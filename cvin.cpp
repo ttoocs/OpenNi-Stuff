@@ -31,6 +31,8 @@ void CVIN::getNextFrames(cv::Mat &depth, cv::Mat &color){
 
   adepth = cv::imread(strDepth, CV_LOAD_IMAGE_ANYDEPTH);
   acol = cv::imread(strImg, CV_LOAD_IMAGE_COLOR);
+ 
+  cv::cvtColor(acol, acol, CV_RGB2BGR); //Fix color?
 
   //std::cout << "TEST: " << adepth.rows << std::endl;
 
