@@ -47,6 +47,7 @@ Depth::~Depth()
 XnStatus Depth::Init()
 {
   cvIn.getNextFrames(m_DFrame,m_IFrame);
+  std::cout << "Depth Reader initalized." << std::endl;
   return (XN_STATUS_OK);
 }
 
@@ -57,6 +58,7 @@ XnBool Depth::IsCapabilitySupported( const XnChar* strCapabilityName )
 
 XnStatus Depth::StartGenerating()
 {
+  std::cout << "Depth started generating" << std::endl;
   XnStatus nRetVal = XN_STATUS_OK;
 
   m_bGenerating = TRUE;
@@ -120,6 +122,7 @@ XnStatus Depth::UpdateData()
   int curFrame = cvIn.getCurFrames();
   if(curFrame >= MaxFrame){
     StopGenerating();
+    std::cout << "Depth reached last frame." << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
     

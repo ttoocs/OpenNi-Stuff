@@ -50,8 +50,8 @@ Image::~Image()
 
 XnStatus Image::Init()
 {
-//  std::cout << "OpenNI2 Image: Init filename: " << m_strName << std::endl;
   cvIn.getNextFrames(m_DFrame,m_IFrame);
+  std::cout << "Image Reader initalized." << std::endl;
   
 //  std::cout << "Num Cols: " << m_IFrame.cols << std::endl;
 //  std::cout << "Num Rows: " << m_IFrame.rows << std::endl;
@@ -66,6 +66,7 @@ XnBool Image::IsCapabilitySupported( const XnChar* strCapabilityName )
 
 XnStatus Image::StartGenerating()
 {
+  std::cout << "Image started generating" << std::endl;
   XnStatus nRetVal = XN_STATUS_OK;
 
   m_bGenerating = TRUE;
@@ -129,6 +130,7 @@ XnStatus Image::UpdateData()
   int curFrame = cvIn.getCurFrames();
   if(curFrame >= MaxFrame){
     StopGenerating();
+    std::cout << "Depth reached last frame." << std::endl;
     return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
     
