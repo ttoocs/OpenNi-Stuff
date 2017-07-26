@@ -6,13 +6,14 @@
 #define imgDir "colourframes/"
 
 #define prefix "Image"
-#define suffix ".jpg"
+#define dsuffix ".png"
+#define isuffix ".jpg"
 
 
 CVIN::CVIN(const char* indir){
   dirPath = std::string(indir);
   curFrame = 0;
-  numFrames =  (int)std::count_if(boost::filesystem::directory_iterator(boost::filesystem::path(dirPath + depthDir)),boost::filesystem::directory_iterator(),  [](const boost::filesystem::directory_entry& e) {return e.path().extension() == suffix;});
+  numFrames =  (int)std::count_if(boost::filesystem::directory_iterator(boost::filesystem::path(dirPath + depthDir)),boost::filesystem::directory_iterator(),  [](const boost::filesystem::directory_entry& e) {return e.path().extension() == dsuffix;});
 
 }
 
@@ -23,8 +24,8 @@ int CVIN::getNumFrames(){
 void CVIN::getNextFrames(cv::Mat &depth, cv::Mat &color){
   cv::Mat adepth, acol;
   
-  std::string strDepth = dirPath + depthDir + prefix+ std::to_string(curFrame) + suffix;
-  std::string strImg = dirPath + imgDir +  prefix + std::to_string(curFrame) + suffix;
+  std::string strDepth = dirPath + depthDir + prefix+ std::to_string(curFrame) + dsuffix;
+  std::string strImg = dirPath + imgDir +  prefix + std::to_string(curFrame) + isuffix;
 
   //std::cout << "depth path: " << strDepth << std::endl;
 
