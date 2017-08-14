@@ -4,9 +4,10 @@
 
 #include <boost/filesystem.hpp>
 
-#include "props.hpp"
+// #include "props.hpp"
 
 bool imageReg = true;
+bool KinectImgFix = true; //Enabled when reg enabled and kinfu detected.
 bool imageSync = true;
 bool OpenNIDebug = false;
 bool recProps = true;
@@ -47,6 +48,10 @@ void parseArgs(int argc,char *argv[]){
         enableDepth = true;
     }else if (std::string(argv[i]) == "-nodepth"){
         enableDepth = false; 
+    }else if (std::string(argv[i]) == "-nokinectimgfix"){
+        KinectImgFix = false; 
+    }else if (std::string(argv[i]) == "-kinectimgfix"){
+        KinectImgFix = true; 
     }else{
         std::cout << " Unknown arg: " << argv[i] << std::endl;
     }
@@ -109,6 +114,12 @@ int main(int argc, char *argv[])
 //    return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
 
+  if( KinectImgFix &&  device.getDeviceInfo().getName() == "Kinect" && device.getDeviceInfo().getVendor() == "Microsoft" && std::string(device.getDeviceInfo().getUri()).find("freenect2") != std::string::npos ) {
+    KinectImgFix = true;
+  }else {
+    KinectImgFix = false;
+  }
+    
   openni::VideoStream image,depth,ir;
 
   if(enableColor){
@@ -208,6 +219,11 @@ int main(int argc, char *argv[])
         iMat = cv::Mat(iH, iW, CV_8UC3, (openni::RGB888Pixel*) iFrame.getData());
         cv::cvtColor(iMat, iMat, CV_RGB2BGR);
       }
+
+      if( KinectImgFix) {
+        cv::resize(iMat, iMat, cv::Size(640, 480));
+      }
+
       imwrite("./colourframes/Image" + std::to_string(cnt) + ".jpg",iMat);
     }
 
@@ -216,6 +232,13 @@ int main(int argc, char *argv[])
       int dW = dFrame.getWidth();
       
       dMat = cv::Mat(dH, dW, CV_16U, (openni::DepthPixel*) dFrame.getData());
+      
+      if( KinectImgFix) {
+        cv::Mat tmp = dMat(cv::Rect(0,0,512,424));
+        dMat = tmp;
+        cv::resize(dMat, dMat, cv::Size(640, 480));
+      }
+  
       imwrite("./depthframes/Image" + std::to_string(cnt) + ".png",dMat); 
     }
 
