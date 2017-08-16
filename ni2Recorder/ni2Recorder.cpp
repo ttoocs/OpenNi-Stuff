@@ -113,11 +113,13 @@ int main(int argc, char *argv[])
       std::cout << "OpenNi2 open failed, for an unknown reason. (maybe a empty file?)" << std::endl;
 //    return XN_STATUS_DEVICE_NOT_CONNECTED;
   }
-
-  if( KinectImgFix &&  device.getDeviceInfo().getName() == "Kinect" && device.getDeviceInfo().getVendor() == "Microsoft" && std::string(device.getDeviceInfo().getUri()).find("freenect2") != std::string::npos ) {
+  if( KinectImgFix  &&  std::string(device.getDeviceInfo().getName()).find("Kinect") != std::string::npos && std::string(device.getDeviceInfo().getVendor()).find("Microsoft") != std::string::npos && std::string(device.getDeviceInfo().getUri()).find("freenect2") != std::string::npos ) { 
     KinectImgFix = true;
+    std::cout << "Enabling kinect crop fix thing." << std::endl;
   }else {
+    std::cout << device.getDeviceInfo().getName() << std::endl;
     KinectImgFix = false;
+    std::cout << "Disabled kinect crop fix thing." << std::endl;
   }
     
   openni::VideoStream image,depth,ir;
