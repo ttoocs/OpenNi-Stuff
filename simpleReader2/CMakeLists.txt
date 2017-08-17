@@ -29,5 +29,5 @@ include_directories(
 #link_directories(  ${PCL_LIBRARY_DIRS})
 #add_definitions(${PCL_DEFINITIONS})
 
-add_executable(imgTest main.cpp)
-target_link_libraries(imgTest ${OPENNI2_LIBRARY} ${OpenCV_LIBS})
+add_executable(simpleReader2 main.cpp)
+target_link_libraries(simpleReader2 ${OPENNI2_LIBRARY} ${OpenCV_LIBS})

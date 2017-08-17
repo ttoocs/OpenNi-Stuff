@@ -15,6 +15,7 @@ bool irAsColor = false;
 bool enableIR = true;
 bool enableDepth = true;
 bool enableColor = true;
+bool cvmirror = true;
 void parseArgs(int argc,char *argv[]){
   for(int i = 1; i < argc; i++){
     if (std::string(argv[i]) == "-noReg" || (std::string(argv[i]) == "-noreg" )) {
@@ -52,6 +53,10 @@ void parseArgs(int argc,char *argv[]){
         KinectImgFix = false; 
     }else if (std::string(argv[i]) == "-kinectimgfix"){
         KinectImgFix = true; 
+    }else if (std::string(argv[i]) == "-nocvmirror"){
+        cvmirror = false; 
+    }else if (std::string(argv[i]) == "-cvmirror"){
+        cvmirror = true; 
     }else{
         std::cout << " Unknown arg: " << argv[i] << std::endl;
     }
@@ -190,7 +195,7 @@ int main(int argc, char *argv[])
 
 
   openni::VideoFrameRef dFrame, iFrame, irFrame;
-  cv::Mat iMat, dMat, irMat;
+  cv::Mat iMat, dMat, irMat, tmp;
   int cnt=0;
   
   if(enableColor)
@@ -226,6 +231,10 @@ int main(int argc, char *argv[])
         cv::resize(iMat, iMat, cv::Size(640, 480));
       }
 
+      if(cvmirror){
+        cv::flip(iMat,tmp,1);
+        iMat=tmp;
+      }
       imwrite("./colourframes/Image" + std::to_string(cnt) + ".jpg",iMat);
     }
 
@@ -240,6 +249,10 @@ int main(int argc, char *argv[])
         dMat = tmp;
         cv::resize(dMat, dMat, cv::Size(640, 480));
       }
+      if(cvmirror){
+        cv::flip(dMat,tmp,1);
+        dMat=tmp;
+      }
   
       imwrite("./depthframes/Image" + std::to_string(cnt) + ".png",dMat); 
     }
@@ -249,6 +262,12 @@ int main(int argc, char *argv[])
       int irW = irFrame.getWidth();
       
       irMat = cv::Mat(irH, irW, CV_16U,  (openni::Grayscale16Pixel*) irFrame.getData());
+      
+      if(cvmirror){
+        cv::flip(irMat,tmp,1);
+        irMat=tmp;
+      }
+
       imwrite("./irframes/Image" + std::to_string(cnt) + ".png", irMat); 
     } 
 
